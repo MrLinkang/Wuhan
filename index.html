@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>武汉加油</title>
+    <script src="./src/js/echarts.js"></script>
+    <script src="./src/js/china.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+
+        }
+
+        h1 {
+            text-align: center
+        }
+
+        img {
+            width: 100%;
+            height: 40%
+        }
+
+        #main {
+            width: 100%;
+            height: 80%;
+            border: 1px solid #ddd;
+            background: gray;
+
+        }
+
+        #news {
+            margin: 2%;
+            /* color: #ddd; */
+        }
+
+        ul,
+        li {
+            margin: 2%;
+        }
+
+        table {
+            width: 100%;
+            text-align: center
+        }
+
+        td,
+        th {
+            width: 25%;
+            height: 30px;
+        }
+
+        #confirmedCount {
+            font-size: 26px;
+            color: #F74C31
+        }
+
+        #suspectedCount {
+            font-size: 26px;
+            color: #F78207
+        }
+
+        #deadCount {
+            font-size: 26px;
+            color: #5C7092
+        }
+
+        #curedCount {
+            font-size: 26px;
+            color: #28B7A3
+        }
+    </style>
+
+</head>
+
+<body>
+    <img src="./src/imgs/1.jpg">
+    <div id="news">
+    </div>
+    <table>
+        <tr>
+            <td id="confirmedCount"></td>
+            <td id="suspectedCount"></td>
+            <td id="deadCount"></td>
+            <td id="curedCount"></td>
+        </tr>
+        <tr>
+            <th>确诊病例</th>
+            <th>疑似病例</th>
+            <th>死亡人数</th>
+            <th>治愈人数</th>
+        </tr>
+    </table>
+    <div style="margin-top: 3%">
+        <ul>
+            <li>传染源: 野生动物，可能为中华菊头蝠</li>
+            <li>病毒: 新型冠状病毒 2019-nCoV</li>
+            <li>传播途径: 经呼吸道飞沫传播，亦可通过接触传播</li>
+            <li>易感人群: 人群普遍易感。老年人及有基础疾病者感染后病情较重，儿童及婴幼儿也有发病</li>
+            <li>潜伏期: 一般为 3~7 天，最长不超过 14 天，潜伏期内存在传染性</li>
+        </ul>
+
+    </div>
+    <div id="main">
+    </div>
+    <script type="text/javascript">
+        var responseText = "q"
+        var httpRequest = new XMLHttpRequest(); 
+        httpRequest.open('GET', 'https://www.tianqiapi.com/api?version=epidemic&appid=23035354&appsecret=8YvlPNrz',
+            true); 
+        httpRequest.send(); 
+        /**
+         * 获取数据后的处理程序
+         */
+        httpRequest.onreadystatechange = function () {
+            if (httpRequest.readyState == 4 && httpRequest.status == 200) {
+                responseText = httpRequest.responseText;
+                console.log(JSON.parse(responseText))
+                //接下来我们要处理数据
+                var dataList = JSON.parse(responseText).data.list.map(item => ({
+                    name: item.split(" ")[0],
+                    value: item.split(" ")[2]
+                }))
+                var timeNode = document.createTextNode("截至 " + JSON.parse(responseText).data.date + " 全国数据统计");
+                var confirmedNode = document.createTextNode(JSON.parse(responseText).data.diagnosed);
+                var suspectedNode = document.createTextNode(JSON.parse(responseText).data.suspect);
+                var deadNode = document.createTextNode(JSON.parse(responseText).data.death);
+                var curedNode = document.createTextNode(JSON.parse(responseText).data.cured);
+
+                document.getElementById("news").appendChild(document.createElement("TEXT").appendChild(timeNode));
+                document.getElementById("confirmedCount").appendChild(confirmedNode);
+                document.getElementById("suspectedCount").appendChild(suspectedNode);
+                document.getElementById("deadCount").appendChild(deadNode);
+                document.getElementById("curedCount").appendChild(curedNode);
+
+                var myChart = echarts.init(document.getElementById('main'));
+                option = {
+                    tooltip: {
+                        formatter: function (params, ticket, callback) {
+                            return params.seriesName + '<br />' + params.name + '：' + params.value
+                        } //数据格式化
+                    },
+                    visualMap: {
+                        min: 0,
+                        max: dataList[0].value,
+                        left: 'left',
+                        top: 'bottom',
+                        pieces: [{
+                                min: 1000,
+                                color: '#7C0000'
+                            },
+                            {
+                                min: 500,
+                                max: 1000,
+                                color: '#d94e5d'
+                            },
+                            {
+                                min: 100,
+                                max: 499,
+                                color: '#F3664C'
+                            },
+                            {
+                                min: 10,
+                                max: 99,
+                                color: '#FFA477'
+                            },
+                            {
+                                min: 1,
+                                max: 9,
+                                color: '#FFD5C0'
+                            }
+                        ],
+                        show: true //图注
+                    },
+
+                    geo: {
+                        map: 'china',
+                        roam: false, //不开启缩放和平移
+                        zoom: 1.23, //视角缩放比例
+                        label: {
+                            normal: {
+                                show: true,
+                                fontSize: '10',
+                                color: 'rgba(0,0,0,0.7)'
+                            }
+                        },
+                        itemStyle: {
+                            normal: {
+                                borderColor: 'rgba(0, 0, 0, 0.2)'
+                            },
+                            emphasis: {
+                                areaColor: '#F3B329', //鼠标选择区域颜色
+                                shadowOffsetX: 0,
+                                shadowOffsetY: 0,
+                                shadowBlur: 20,
+                                borderWidth: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    },
+                    series: [{
+                        name: '',
+                        type: 'map',
+                        geoIndex: 0,
+                        data: dataList
+                    }]
+                };
+                myChart.setOption(option);
+            }
+
+        };
+    </script>
+</body>
+
+</html>
